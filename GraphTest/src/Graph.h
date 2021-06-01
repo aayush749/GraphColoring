@@ -2,8 +2,9 @@
 
 #include <iostream>
 #include <vector>
-//#include <unordered_map>
+#include <unordered_map>
 #include <queue>
+#include <set>
 
 #include "Core_Components.h"
 #include <memory>
@@ -31,6 +32,50 @@ public:
 		position.x = pos.x;
 		position.y = WINDOW_HEIGHT - pos.y;
 		color = { 255, 0, 0, 255 };
+	}
+
+	void SetColor(SDL_Color& col)
+	{
+		color = col;
+	}
+};
+
+struct Edge
+{
+private:
+	Node m_src, m_dest;
+public:
+	Edge()
+		:m_src(Node(-1, {-1, -1})), m_dest(Node(-1, {-1, -1}))
+	{}
+	void SetEdgeSourceNode(const Node& src)
+	{
+		m_src = src;
+	}
+	void SetEdgeDestinationNode(const Node& dest)
+	{
+		m_dest = dest;
+	}
+	Edge(const Node& src, const Node& dest)
+		:m_src(src), m_dest(dest)
+	{}
+	const Node& GetSourceNode() const
+	{
+		return m_src;
+	}
+	const Node& GetDestinationNode() const
+	{
+		return m_dest;
+	}
+
+	Node& GetSourceNode()
+	{
+		return m_src;
+	}
+
+	Node& GetDestinationNode()
+	{
+		return m_dest;
 	}
 };
 
@@ -74,10 +119,11 @@ public:
 class Graph
 {
 private:
+	const char* m_Name;
 	std::shared_ptr<Renderer> m_rendererPtr;
 	int m_VertexCount;
 	std::vector< Vector<Node> > adjList;
-
+	std::vector<Edge> m_Edges;
 public:
 	Graph();
 
@@ -91,7 +137,9 @@ public:
 
 	bool HasCycle(Node source);
 
-	void Render();
+	void Render(bool shouldPersist = true);
+
+	void Color();
 private:
 
 	bool HasCycle_Helper(Node source, int parent, std::vector<bool>& visited);

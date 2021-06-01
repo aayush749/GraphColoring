@@ -7,22 +7,30 @@ const int constNodeSize = 20;
 Graph::Graph()
 	:m_VertexCount(0)
 {
-	m_rendererPtr = std::make_shared<Renderer>("NULL");
+	m_Name = "NULL";
+	//m_rendererPtr = std::make_shared<Renderer>("NULL");
 }
 
 
 Graph::Graph(const char* windowTitle, int V)
 	:m_VertexCount(V)
 {	
-	m_rendererPtr = std::make_shared<Renderer>(windowTitle);
+	m_Name = windowTitle;
+	//m_rendererPtr = std::make_shared<Renderer>(windowTitle);
 	adjList.resize(V);
 }
 
 void Graph::AddEdge(Node source, Node dest, bool isBidirectional)
 {
+	Edge edge;
 	adjList[source.node_number - 1].push_back(dest);
+	edge.SetEdgeSourceNode(source);
 	if (isBidirectional)
+	{
 		adjList[dest.node_number - 1].push_back(source);
+		edge.SetEdgeDestinationNode(dest);
+	}
+	m_Edges.push_back(edge);
 }
 
 void Graph::BFS(Node source)
@@ -90,9 +98,9 @@ void Graph::DFS_helper(Node source, std::vector<bool>& visited)
 			DFS_helper(nbrs, visited);
 }
 
-static void Draw(std::shared_ptr<Renderer> renderer, const Node& node)
+static void Draw(std::shared_ptr<Renderer> renderer, const Node& node, const char* title)
 {
-	printf("Rendering Node: %d\n", node.node_number);
+	printf("Rendering Graph: %s, Node: %d\n", title, node.node_number);
 	SDL_Rect rect_node = {
 		node.position.x,
 		node.position.y,
@@ -138,54 +146,135 @@ static void ProcessInput(bool& isWindow)
 	}
 }
 
-void RenderGraph(std::shared_ptr<Renderer> rendererPtr, const int vertsCount, const std::vector< Vector<Node> >& adjList)
+void Graph::Render(bool shouldPersist)
 {
-	//Fill the background color;
-	rendererPtr->FillScreen(0, 0, 0, 255);
+	m_rendererPtr = std::make_shared<Renderer>(m_Name);
+
 	bool isWindow = true;
-	bool* drawn = new bool[vertsCount];
-	Vector2<int>* nodeCoords = new Vector2<int>[vertsCount];
+	bool* drawn = new bool[m_VertexCount];
 	while (isWindow)
 	{
 		ProcessInput(isWindow);
-		rendererPtr->FillScreen(0, 0, 0, 255);
-		//render vertices/nodes -- TODO: could try using BFS or DFS, current algorithm is sluggish
-		memset(drawn, (int)false, vertsCount);
-		memset(nodeCoords, -1, sizeof(Vector<int>) * vertsCount);
-		Vector2<int> srcNode, destNode;
+		//Fill the screen
+		m_rendererPtr->FillScreen(255, 255, 255, 255);
+		
+		memset(drawn, (int)false, m_VertexCount);
 		for (auto i = 0; i < adjList.size(); i++)
 		{
-			for (const auto& node : adjList[i])
+			for (const auto& edge : m_Edges)
 			{
-				destNode = node.position;
-				if (nodeCoords[i] != Vector2<int>(-1, -1))
-					srcNode = nodeCoords[i];
-				else
-					srcNode = { -1, -1 };
-				if (!drawn[node.node_number - 1])
+				const auto& srcNode = edge.GetSourceNode();
+				if (!drawn[srcNode.node_number - 1])
 				{
-					//Fill the coordinate vec2 array
-					nodeCoords[node.node_number - 1] = node.position;
 					//draws the node if it is not drawn
-					Draw(rendererPtr, node);
-					//draws the edge, if it is not drawn, and the source is known
-					if (srcNode != Vector2<int>(-1, -1))
-						SDL_RenderDrawLine(rendererPtr->GetRendererPtr(), srcNode.x, srcNode.y, destNode.x, destNode.y);
+					Draw(m_rendererPtr, srcNode, m_Name);
 					//then marks the node as being drawn
-					drawn[node.node_number - 1] = true;
+					drawn[srcNode.node_number - 1] = true;
+				}
+				const auto& destNode = edge.GetDestinationNode();
+				if (!drawn[destNode.node_number - 1])
+				{
+					//draws the node if it is not drawn
+					Draw(m_rendererPtr, destNode, m_Name);
+					//then marks the node as being drawn
+					drawn[destNode.node_number - 1] = true;
 				}
 			}
 		}
 
+
+		//Draw all the edges in single pass
+		for (const Edge& edge : m_Edges)
+		{
+			SDL_RenderDrawLine(m_rendererPtr->GetRendererPtr(),
+				edge.GetSourceNode().position.x, edge.GetSourceNode().position.y,
+				edge.GetDestinationNode().position.x, edge.GetDestinationNode().position.y);
+		}
+
 		//Swap the buffers finally, after all nodes and lines have been drawn
-		rendererPtr->SwapBuffers();
+		m_rendererPtr->SwapBuffers();
 	}
 	delete[] drawn;
+	
+	if(!shouldPersist)
+		m_rendererPtr->~Renderer();
 }
 
-void Graph::Render()
+void Graph::Color()
 {
-	m_rendererPtr->FillScreen(0, 0, 0, 255);
-	std::thread renderThread(RenderGraph, m_rendererPtr, m_VertexCount, std::ref(adjList));
-	renderThread.join();
+	//Could also use a color palette like this to do the coloring
+	{
+		SDL_Color palette[] = {
+		{255, 0, 0, 255},
+		{0, 255, 0, 255},
+		{0, 0, 255, 255},
+		{150, 200, 200, 255},
+		{200, 150, 255, 255},
+		{200, 150, 100, 255}
+		};
+	}
+	// keep track of the color assigned to each vertex
+	std::unordered_map<int, int> result;
+
+	// assign a color to vertex one by one
+	for (int u = 0; u < m_VertexCount; u++)
+	{
+		// set to store the color of adjacent vertices of `u`
+		std::set<int> assigned;
+
+		// check colors of adjacent vertices of `u` and store them in a set
+		for (Node& i : adjList[u])
+		{
+			if (result[i.node_number - 1]) {
+				assigned.insert(result[i.node_number - 1]);
+			}
+		}
+
+		// check for the first free color
+		int color = 1;
+		for (auto& c : assigned)
+		{
+			if (color != c) {
+				break;
+			}
+			color++;
+		}
+
+		// assign vertex 'u' the first available color
+		result[u] = color;
+	}
+
+	//color assigned to vertex V is result[V], set the colors accordingly
+	SDL_Color baseColor = { 150, 150, 150, 255 };
+	bool* isColored = new bool[m_VertexCount];
+	memset(isColored, (int)false, sizeof(bool) * m_VertexCount);
+	int i = 1;
+	for (Edge& e : m_Edges)
+	{
+		SDL_Color color = { baseColor.r + 10 * i , baseColor.g + 20 * i, baseColor.b + 10 * i, baseColor.a };
+
+		Node& src = e.GetSourceNode();
+		Node& dest = e.GetDestinationNode();
+		if (!isColored[src.node_number - 1])
+		{
+			color.r += 150 * result[src.node_number - 1];
+			color.g += 200 * result[src.node_number - 1];
+			color.b += 50 * result[src.node_number - 1];
+			src.SetColor(color);
+
+			//then mark the node as colored
+			isColored[src.node_number - 1] = true;
+		}
+		if (!isColored[dest.node_number - 1])
+		{
+			color.r += 150 * result[dest.node_number - 1];
+			color.g += 200 * result[dest.node_number - 1];
+			color.b += 50 * result[dest.node_number - 1];
+			dest.SetColor(color);
+
+			//then mark the node as colored
+			isColored[dest.node_number - 1] = true;
+		}
+	}
+	delete[] isColored;
 }

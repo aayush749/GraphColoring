@@ -22,17 +22,19 @@ int main()
 	printf("\nDFS: ");
 	graph.DFS(1);
 
-	/*Graph cyclic("Graph 2 - cyclic", 5);
+	Graph cyclic("Graph 2 - cyclic", 5);
 	cyclic.AddEdge(Node(1, { XCENTER + 100, YCENTER }), Node(2, { XCENTER, YCENTER }));
 	cyclic.AddEdge(Node(2, { XCENTER, YCENTER }), Node(3, { XCENTER - 100, YCENTER + 100 }));
 	cyclic.AddEdge(Node(3, { XCENTER - 100, YCENTER + 100 }), Node(4, { XCENTER, YCENTER + 200 }));
 	cyclic.AddEdge(Node(4, { XCENTER, YCENTER + 200 }), Node(5, { XCENTER + 100, YCENTER + 200 }));
 	cyclic.AddEdge(Node(4, { XCENTER, YCENTER + 200 }), Node(1, { XCENTER + 100, YCENTER }));
-	printf(cyclic.HasCycle(1) ? "\nHas a cycle\n" : "\nDoes not have a cycle\n");*/
+	printf(cyclic.HasCycle(1) ? "\nHas a cycle\n" : "\nDoes not have a cycle\n");
 	
-	graph.Render();
-	//cyclic.Render();
+	graph.Color();
+	graph.Render(false);
 
+	cyclic.Color();
+	cyclic.Render(false);
 	std::cin.get();
 
 	return 0;
