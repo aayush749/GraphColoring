@@ -7,8 +7,8 @@
 #define FALSE 0
 #define TRUE 1
 
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+#define WINDOW_WIDTH 1920
+#define WINDOW_HEIGHT 1080
 
 #define FPS 30
 #define FRAME_TARGET_TIME (1000 / FPS)		//time for which a single frame stays on the screen(in ms)

@@ -154,6 +154,7 @@ void Graph::Render(bool shouldPersist)
 	bool* drawn = new bool[m_VertexCount];
 	while (isWindow)
 	{
+		SDL_Delay(FRAME_TARGET_TIME);
 		ProcessInput(isWindow);
 		//Fill the screen
 		m_rendererPtr->FillScreen(255, 255, 255, 255);
