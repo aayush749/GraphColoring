@@ -1,0 +1,10 @@
+*.exe
+.vs/
+*.ilk
+*.pdb
+*.recipe
+*.idb
+*.pdb
+*.obj
+GraphTest/Debug/
+GrpahTest/src/Line_drawing_in_SDL.txt
